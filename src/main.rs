@@ -1,8 +1,13 @@
 use actix_web::{get, post, web, App, HttpResponse, HttpServer, Responder};
 
+struct AppState {
+    app_name: String,
+}
+
 #[get("/")]
-async fn hello() -> impl Responder {
-    HttpResponse::Ok().body("Hello world")
+async fn hello(data: web::Data<AppState>) -> impl Responder {
+    let app_name = &data.app_name;
+    HttpResponse::Ok().body(format!("Hello {app_name}!"))
 }
 
 #[post("/echo")]
@@ -18,6 +23,9 @@ async fn manual_hello() -> impl Responder {
 async fn main() -> std::io::Result<()> {
     HttpServer::new(|| {
         App::new()
+            .app_data(web::Data::new(AppState {
+                app_name: String::from("My First Rust Backend"),
+            }))
             .service(hello)
             .service(echo)
             .route("/hey", web::get().to(manual_hello))
