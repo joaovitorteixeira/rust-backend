@@ -1,5 +1,12 @@
 {
     "cSpell.words": [
-        "actix"
+        "actix",
+        "apistos",
+        "openapi",
+        "Rapi",
+        "rapidoc",
+        "redoc",
+        "schemars",
+        "utoipa"
     ]
 }

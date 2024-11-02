@@ -1,6 +1,19 @@
-use std::sync::Mutex;
+use std::{net::Ipv4Addr, sync::Mutex};
 
-use actix_web::{guard, post, web, App, HttpResponse, HttpServer, Responder};
+use actix_web::{
+    guard,
+    middleware::Logger,
+    post,
+    web::{self, Json},
+    App, HttpResponse, HttpServer, Responder,
+};
+use serde::{Deserialize, Serialize};
+use utoipa::{OpenApi, ToSchema};
+use utoipa_actix_web::AppExt;
+use utoipa_rapidoc::RapiDoc;
+use utoipa_redoc::{Redoc, Servable};
+use utoipa_scalar::{Scalar, Servable as ScalarServable};
+use utoipa_swagger_ui::SwaggerUi;
 
 mod scope_one;
 
@@ -9,17 +22,27 @@ struct AppStateWithCounter {
     counter: Mutex<u32>,
 }
 
-#[post("/echo")]
-async fn echo(req_body: String) -> impl Responder {
-    HttpResponse::Ok().body(req_body)
+#[derive(Serialize, Deserialize, ToSchema, Debug)]
+struct Echo {
+    message: String,
 }
 
-async fn manual_hello() -> impl Responder {
-    HttpResponse::Ok().body("Hey there!")
+#[utoipa::path(tag = "echo", responses((status = 201, description = "Todo created successfully", body = Echo),))]
+#[post("/echo")]
+async fn echo(todo: Json<Echo>) -> impl Responder {
+    HttpResponse::Ok().json(todo)
 }
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
+    #[derive(OpenApi)]
+    #[openapi(        
+        tags(
+            (name = "backend-rust", description = "My first backend in rust")
+        ),
+    )]
+    struct ApiDoc;
+
     let app_state = web::Data::new(AppStateWithCounter {
         counter: Mutex::new(0),
         app_name: String::from("My First Rust Backend"),
@@ -27,16 +50,25 @@ async fn main() -> std::io::Result<()> {
 
     HttpServer::new(move || {
         App::new()
+            .into_utoipa_app()
+            .openapi(ApiDoc::openapi())
+            .map(|app| app.wrap(Logger::default()))
+            .openapi_service(|api| Scalar::with_url("/scalar", api))
             .app_data(app_state.clone())
             .service(
-                web::scope("/scope-one")
+                utoipa_actix_web::scope("/scope-one")
                     .guard(guard::Header("custom-header", "valid"))
                     .configure(scope_one::config),
             )
             .service(echo)
-            .route("/hey", web::get().to(manual_hello))
+            .openapi_service(|api| Redoc::with_url("/redoc", api))
+            .openapi_service(|api| {
+                SwaggerUi::new("/swagger-ui/{_:.*}").url("/api-docs/openapi.json", api)
+            })
+            .map(|app| app.service(RapiDoc::new("/api-docs/openapi.json").path("/rapidoc")))
+            .into_app()
     })
-    .bind(("127.0.0.1", 8080))?
+    .bind((Ipv4Addr::UNSPECIFIED, 8080))?
     .run()
     .await
 }
