@@ -1,13 +1,18 @@
+use std::sync::Mutex;
+
 use actix_web::{get, post, web, App, HttpResponse, HttpServer, Responder};
 
-struct AppState {
+struct AppStateWithCounter {
     app_name: String,
+    counter: Mutex<u32>,
 }
 
 #[get("/")]
-async fn hello(data: web::Data<AppState>) -> impl Responder {
+async fn hello(data: web::Data<AppStateWithCounter>) -> impl Responder {
     let app_name = &data.app_name;
-    HttpResponse::Ok().body(format!("Hello {app_name}!"))
+    let mut counter = data.counter.lock().unwrap();
+    *counter += 1;
+    HttpResponse::Ok().body(format!("Hello {app_name}!\nRequest number: {counter}"))
 }
 
 #[post("/echo")]
@@ -21,11 +26,14 @@ async fn manual_hello() -> impl Responder {
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
-    HttpServer::new(|| {
+    let app_state = web::Data::new(AppStateWithCounter {
+        counter: Mutex::new(0),
+        app_name: String::from("My First Rust Backend"),
+    });
+
+    HttpServer::new(move || {
         App::new()
-            .app_data(web::Data::new(AppState {
-                app_name: String::from("My First Rust Backend"),
-            }))
+            .app_data(app_state.clone())
             .service(hello)
             .service(echo)
             .route("/hey", web::get().to(manual_hello))
