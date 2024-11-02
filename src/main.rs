@@ -14,7 +14,6 @@ use utoipa_rapidoc::RapiDoc;
 use utoipa_redoc::{Redoc, Servable};
 use utoipa_scalar::{Scalar, Servable as ScalarServable};
 use utoipa_swagger_ui::SwaggerUi;
-
 mod scope_one;
 
 struct AppStateWithCounter {
@@ -48,8 +47,11 @@ async fn main() -> std::io::Result<()> {
         app_name: String::from("My First Rust Backend"),
     });
 
+    env_logger::init_from_env(env_logger::Env::default().default_filter_or("info"));
+
     HttpServer::new(move || {
         App::new()
+            .wrap(Logger::default())
             .into_utoipa_app()
             .openapi(ApiDoc::openapi())
             .map(|app| app.wrap(Logger::default()))
