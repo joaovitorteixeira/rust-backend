@@ -1,6 +1,6 @@
 use std::sync::Mutex;
 
-use actix_web::{get, post, web, App, HttpResponse, HttpServer, Responder};
+use actix_web::{get, guard, post, web, App, HttpResponse, HttpServer, Responder};
 
 struct AppStateWithCounter {
     app_name: String,
@@ -32,9 +32,14 @@ async fn main() -> std::io::Result<()> {
     });
 
     HttpServer::new(move || {
+        // Now scope any endpoint under /scope-one/ need custom-header = valid
+        let scope_one = web::scope("/scope-one")
+            .guard(guard::Header("custom-header", "valid"))
+            .service(hello);
+
         App::new()
             .app_data(app_state.clone())
-            .service(hello)
+            .service(scope_one)
             .service(echo)
             .route("/hey", web::get().to(manual_hello))
     })
