@@ -1,18 +1,12 @@
 use std::sync::Mutex;
 
-use actix_web::{get, guard, post, web, App, HttpResponse, HttpServer, Responder};
+use actix_web::{guard, post, web, App, HttpResponse, HttpServer, Responder};
+
+mod scope_one;
 
 struct AppStateWithCounter {
     app_name: String,
     counter: Mutex<u32>,
-}
-
-#[get("/")]
-async fn hello(data: web::Data<AppStateWithCounter>) -> impl Responder {
-    let app_name = &data.app_name;
-    let mut counter = data.counter.lock().unwrap();
-    *counter += 1;
-    HttpResponse::Ok().body(format!("Hello {app_name}!\nRequest number: {counter}"))
 }
 
 #[post("/echo")]
@@ -32,14 +26,13 @@ async fn main() -> std::io::Result<()> {
     });
 
     HttpServer::new(move || {
-        // Now scope any endpoint under /scope-one/ need custom-header = valid
-        let scope_one = web::scope("/scope-one")
-            .guard(guard::Header("custom-header", "valid"))
-            .service(hello);
-
         App::new()
             .app_data(app_state.clone())
-            .service(scope_one)
+            .service(
+                web::scope("/scope-one")
+                    .guard(guard::Header("custom-header", "valid"))
+                    .configure(scope_one::config),
+            )
             .service(echo)
             .route("/hey", web::get().to(manual_hello))
     })
