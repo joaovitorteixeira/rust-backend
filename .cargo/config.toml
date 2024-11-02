@@ -1,0 +1,6 @@
+[env]
+RUST_LOG="rust_backend=debug,actix=info"
+DATABASE_URL="app.db"
+
+## -- ConfigMap
+SERVICE_WEB_FOLDER="web-folder/"

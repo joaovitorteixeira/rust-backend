@@ -2,6 +2,8 @@
     "cSpell.words": [
         "actix",
         "apistos",
+        "dotenv",
+        "dotenvy",
         "openapi",
         "Rapi",
         "rapidoc",
