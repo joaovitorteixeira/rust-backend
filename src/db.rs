@@ -7,7 +7,6 @@ use log::info;
 
 use crate::api_error::ApiError;
 
-
 type Pool = r2d2::Pool<ConnectionManager<SqliteConnection>>;
 pub type DbConnection = r2d2::PooledConnection<ConnectionManager<SqliteConnection>>;
 

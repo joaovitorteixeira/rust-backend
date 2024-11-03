@@ -13,6 +13,7 @@ use utoipa_swagger_ui::SwaggerUi;
 mod user;
 mod api_error;
 mod db;
+mod schema;
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {

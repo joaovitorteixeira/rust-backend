@@ -1,18 +1,17 @@
 use actix_web::web;
 use diesel::{
-    prelude::{Insertable, Queryable},
-    query_dsl::methods::SelectDsl,
-    RunQueryDsl, Selectable, SelectableHelper,
+    prelude::{Insertable, Queryable}, query_dsl::methods::SelectDsl, RunQueryDsl, Selectable, SelectableHelper
 };
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
 
 use crate::{api_error::ApiError, db};
 
-use super::schema::user;
+use crate::schema::user;
+
 
 #[derive(Queryable, Selectable, Serialize, ToSchema)]
-#[diesel(table_name = crate::user::schema::user)]
+#[diesel(table_name = user)]
 #[diesel(primary_key(id))]
 #[diesel(check_for_backend(diesel::sqlite::Sqlite))]
 pub struct User {
@@ -22,7 +21,7 @@ pub struct User {
 }
 
 #[derive(Serialize, Deserialize, Insertable, ToSchema)]
-#[diesel(table_name = crate::user::schema::user)]
+#[diesel(table_name = crate::schema::user)]
 pub struct UserCreate {
     pub email: String,
 }
