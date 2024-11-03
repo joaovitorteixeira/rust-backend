@@ -12,7 +12,7 @@ use super::{model::UserCreate, User};
 )]
 #[get("")]
 async fn list() -> Result<HttpResponse, ApiError> {
-    let users = User::find_all().await?;
+    let users = User::list().await?;
 
     Ok(HttpResponse::Ok().json(users))
 }

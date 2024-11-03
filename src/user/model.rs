@@ -46,7 +46,7 @@ impl User {
         }
     }
 
-    pub async fn find_all() -> Result<Vec<Self>, ApiError> {
+    pub async fn list() -> Result<Vec<Self>, ApiError> {
         let result = web::block(move || {
             let conn = &mut db::connection()?;
             let users = user::table.select(User::as_select()).load(conn)?;
