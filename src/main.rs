@@ -1,9 +1,8 @@
-use std::{env, net::Ipv4Addr};
+use std::net::Ipv4Addr;
 use actix_web::{
     middleware::Logger,
     App,  HttpServer, 
 };
-use diesel::{Connection, SqliteConnection};
 use utoipa::OpenApi;
 use utoipa_actix_web::AppExt;
 use utoipa_rapidoc::RapiDoc;
@@ -12,10 +11,13 @@ use utoipa_scalar::{Scalar, Servable as ScalarServable};
 use utoipa_swagger_ui::SwaggerUi;
 
 mod user;
+mod api_error;
+mod db;
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     env_logger::init_from_env(env_logger::Env::default().default_filter_or("info"));
+    db::init();
 
     #[derive(OpenApi)]
     #[openapi(        
@@ -24,8 +26,6 @@ async fn main() -> std::io::Result<()> {
         ),
     )]
     struct ApiDoc;
-
-    establish_db_connection();
 
     HttpServer::new(move || {
         App::new()
@@ -49,10 +49,3 @@ async fn main() -> std::io::Result<()> {
     .await
 }
 
-fn establish_db_connection() -> SqliteConnection {
-    dotenvy::dotenv().ok();
-
-    let file_name = env::var("DATABASE_URL").expect("Database URL is missing");
-
-    SqliteConnection::establish(&file_name).unwrap_or_else(|_| panic!("Error connection to {}", file_name))
-}

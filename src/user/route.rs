@@ -1,6 +1,9 @@
-use actix_web::{get,  HttpResponse, Responder};
+use actix_web::{get, HttpResponse};
 use utoipa_actix_web::service_config::ServiceConfig;
-use crate::user::User;
+
+use crate::api_error::ApiError;
+
+use super::User;
 
 #[utoipa::path(tag = "users", 
     responses(
@@ -8,10 +11,10 @@ use crate::user::User;
     )
 )]
 #[get("")]
-async fn list() -> impl Responder {
-    HttpResponse::Ok().json(vec![
-        User {id: 1, email: String::from("test@email.com")}
-    ])
+async fn list() -> Result<HttpResponse, ApiError> {
+    let users = User::find_all().await?;
+
+    Ok(HttpResponse::Ok().json(users))
 }
 
 pub fn config(cfg: &mut ServiceConfig) {
