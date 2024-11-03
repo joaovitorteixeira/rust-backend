@@ -4,6 +4,7 @@
         "apistos",
         "dotenv",
         "dotenvy",
+        "Insertable",
         "openapi",
         "Rapi",
         "rapidoc",
