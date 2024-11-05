@@ -3,6 +3,7 @@ use actix_web::{
     middleware::Logger,
     App,  HttpServer, 
 };
+use dotenvy::dotenv;
 use utoipa::OpenApi;
 use utoipa_actix_web::AppExt;
 use utoipa_rapidoc::RapiDoc;
@@ -14,9 +15,11 @@ mod user;
 mod api_error;
 mod db;
 mod schema;
+mod auth;
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
+    let _ = dotenv();
     env_logger::init_from_env(env_logger::Env::default().default_filter_or("info"));
     db::init();
 
@@ -36,7 +39,7 @@ async fn main() -> std::io::Result<()> {
             .map(|app| app.wrap(Logger::default()))
             .openapi_service(|api| Scalar::with_url("/scalar", api))
             .service(
-                utoipa_actix_web::scope("/api/v1").configure(user::config)
+                utoipa_actix_web::scope("/api/v1").configure(user::config).configure(auth::config)
             )
             .openapi_service(|api| Redoc::with_url("/redoc", api))
             .openapi_service(|api| {
