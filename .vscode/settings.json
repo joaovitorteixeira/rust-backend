@@ -3,6 +3,7 @@
         "actix",
         "apistos",
         "casdoor",
+        "chrono",
         "dotenv",
         "dotenvy",
         "Insertable",
@@ -10,7 +11,9 @@
         "Rapi",
         "rapidoc",
         "redoc",
+        "reqwest",
         "schemars",
+        "signin",
         "utoipa"
     ]
 }

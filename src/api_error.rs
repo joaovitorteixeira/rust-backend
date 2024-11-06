@@ -2,6 +2,7 @@ use core::fmt;
 
 use actix_web::{http::StatusCode, HttpResponse, ResponseError};
 use diesel::result::Error as DieselError;
+use reqwest::Error as ReqwestError;
 use log::error;
 use serde::Deserialize;
 use serde_json::json;
@@ -24,6 +25,12 @@ impl ApiError {
 impl fmt::Display for ApiError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.write_str(self.message.as_str())
+    }
+}
+
+impl From<ReqwestError> for ApiError {
+    fn from(error: ReqwestError) -> Self {
+      ApiError::new(error.status().unwrap_or_else(|| reqwest::StatusCode::INTERNAL_SERVER_ERROR).as_u16(), error.to_string()) 
     }
 }
 
