@@ -1,4 +1,4 @@
-use reqwest::{Client};
+use reqwest::{Client, Response};
 use serde::Deserialize;
 use serde_json::json;
 use utoipa::ToSchema;
@@ -12,6 +12,7 @@ pub struct CreateUser {
     email: String,
     first_name: String,
     last_name: String,
+    password: String,
 }
 
 pub async fn create(create_user: CreateUser) -> Result<(), ApiError> {
@@ -26,7 +27,8 @@ pub async fn create(create_user: CreateUser) -> Result<(), ApiError> {
         "username": create_user.email,
         "firstName": create_user.first_name,
         "lastName": create_user.last_name,
-        "enabled": true
+        "enabled": true,
+        "credentials": [{"value": create_user.password, "type": "password"}]
     });
     let client = Client::new();
 
@@ -37,9 +39,18 @@ pub async fn create(create_user: CreateUser) -> Result<(), ApiError> {
         .send()
         .await?;
 
+    let _ = remove_error_from_response(response).await?;
+
+    Ok(())
+}
+
+pub async fn remove_error_from_response(response: Response) -> Result<Response, ApiError> {
     if response.status().is_success() {
-        Ok(())
+        Ok(response)
     } else {
-        Err(ApiError::new(response.status().as_u16(), response.text().await?))
+        Err(ApiError::new(
+            response.status().as_u16(),
+            response.text().await?,
+        ))
     }
 }
