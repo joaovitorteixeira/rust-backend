@@ -1,8 +1,10 @@
 use lazy_static::lazy_static;
 use oauth2::{
-    basic::BasicClient, AuthUrl, ClientId, ClientSecret, TokenUrl,
+    basic::BasicClient, reqwest::async_http_client, AuthUrl, ClientId, ClientSecret, TokenResponse, TokenUrl
 };
 use std::env;
+
+use crate::api_error::ApiError;
 
 lazy_static! {
     pub static ref KEYCLOAK_REALM: String =
@@ -33,4 +35,10 @@ lazy_static! {
 
 pub fn config() -> &'static BasicClient {
     &KEYCLOAK_OAUTH
+}
+
+pub async fn get_client_token() -> Result<String, ApiError> {
+    let result = config().exchange_client_credentials().request_async(async_http_client).await?;
+
+    Ok(result.access_token().secret().to_string())
 }

@@ -1,10 +1,12 @@
-use super::keycloak::user;
+
+use super::keycloak::user::{self, CreateUser};
 use crate::api_error::ApiError;
 
 
 
-pub async fn create() -> Result<String, ApiError> {
-    let result = user::create().await?;
 
-    Ok(result)
+pub async fn create(create_user: CreateUser) -> Result<(), ApiError> {
+    user::create(create_user).await?;
+
+    Ok(())
 }

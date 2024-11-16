@@ -5,6 +5,7 @@ use diesel::result::Error as DieselError;
 use log::error;
 use oauth2::{basic::BasicErrorResponseType, RequestTokenError, StandardErrorResponse};
 use serde::Deserialize;
+use reqwest::Error as ReqwestError;
 use serde_json::json;
 use std::error::Error as StdError;
 
@@ -28,6 +29,13 @@ impl fmt::Display for ApiError {
         f.write_str(self.message.as_str())
     }
 }
+
+impl From<ReqwestError> for ApiError {
+    fn from(error: ReqwestError) -> Self {
+      ApiError::new(error.status().unwrap_or_else(|| reqwest::StatusCode::INTERNAL_SERVER_ERROR).as_u16(), error.to_string()) 
+    }
+}
+
 
 impl<E> From<RequestTokenError<E, StandardErrorResponse<BasicErrorResponseType>>> for ApiError
 where

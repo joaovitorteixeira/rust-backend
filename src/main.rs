@@ -48,7 +48,7 @@ async fn main() -> std::io::Result<()> {
             .map(|app| app.service(RapiDoc::new("/api-docs/openapi.json").path("/rapidoc")))
             .into_app()
     })
-    .bind((Ipv4Addr::UNSPECIFIED, 8080))?
+    .bind((Ipv4Addr::UNSPECIFIED, 8000))?
     .run()
     .await
 }
