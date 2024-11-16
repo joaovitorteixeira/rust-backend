@@ -2,10 +2,11 @@ use core::fmt;
 
 use actix_web::{http::StatusCode, HttpResponse, ResponseError};
 use diesel::result::Error as DieselError;
-use reqwest::Error as ReqwestError;
 use log::error;
+use oauth2::{basic::BasicErrorResponseType, RequestTokenError, StandardErrorResponse};
 use serde::Deserialize;
 use serde_json::json;
+use std::error::Error as StdError;
 
 #[derive(Debug, Deserialize)]
 pub struct ApiError {
@@ -28,9 +29,37 @@ impl fmt::Display for ApiError {
     }
 }
 
-impl From<ReqwestError> for ApiError {
-    fn from(error: ReqwestError) -> Self {
-      ApiError::new(error.status().unwrap_or_else(|| reqwest::StatusCode::INTERNAL_SERVER_ERROR).as_u16(), error.to_string()) 
+impl<E> From<RequestTokenError<E, StandardErrorResponse<BasicErrorResponseType>>> for ApiError
+where
+    E: StdError + std::fmt::Debug + std::fmt::Display, // Ensure E implements StdError
+{
+    fn from(error: RequestTokenError<E, StandardErrorResponse<BasicErrorResponseType>>) -> Self {
+        match error {
+            RequestTokenError::ServerResponse(err_response) => ApiError::new(
+                400,
+                format!(
+                    "OAuth2 server response error: {} - {}",
+                    err_response.error(),
+                    err_response
+                        .error_description()
+                        .unwrap_or(&"No details provided".to_string())
+                ),
+            ),
+            RequestTokenError::Request(err) => {
+                ApiError::new(500, format!("OAuth2 HTTP request error: {}", err))
+            }
+            RequestTokenError::Parse(err, body) => ApiError::new(
+                500,
+                format!(
+                    "OAuth2 response parse error: {}. Response body: {}",
+                    err,
+                    String::from_utf8_lossy(&body)
+                ),
+            ),
+            RequestTokenError::Other(err) => {
+                ApiError::new(500, format!("OAuth2 other error: {}", err))
+            }
+        }
     }
 }
 

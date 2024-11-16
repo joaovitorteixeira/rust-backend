@@ -1,13 +1,43 @@
-version: '3.1'
+version: '3.9'
+
 services:
-  casdoor:
-    restart: always
-    image: casbin/casdoor
-    entrypoint: /bin/sh -c './server'
+
+  mysql:
+    image: mysql:8.0.40
+    platform: linux/amd64
     ports:
-      - "8000:8000"
+      - 3366:3306
+    restart: unless-stopped
     environment:
-      RUNNING_IN_DOCKER: "true"
-    user: root
+      MYSQL_USER: ${KEYCLOAK_MYSQL_USER}
+      MYSQL_PASSWORD: ${KEYCLOAK_MYSQL_USER_PASSWORD}
+      MYSQL_DATABASE: ${KEYCLOAK_DATABASE_SCHEMA}
+      MYSQL_ROOT_PASSWORD: ${KEYCLOAK_DATABASE_ROOT_PASSWORD}
     volumes:
-      - ./conf:/conf  # Maps ./conf on the host to /conf in the container
+      - keycloak-and-mysql-volume:/var/lib/mysql
+    networks:
+      - keycloak-and-mysql-network
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:latest
+    ports:
+      - 8181:8080
+    restart: unless-stopped
+    environment:
+      KC_BOOTSTRAP_ADMIN_USERNAME: ${KEYCLOAK_USER}
+      KC_BOOTSTRAP_ADMIN_PASSWORD: ${KEYCLOAK_PASSWORD}
+      KC_DB: mysql
+      KC_DB_URL: jdbc:mysql://mysql/${KEYCLOAK_DATABASE_SCHEMA}
+      KC_DB_USERNAME: ${KEYCLOAK_MYSQL_USER}
+      KC_DB_PASSWORD: ${KEYCLOAK_MYSQL_USER_PASSWORD}
+    command: ["start-dev", "--http-port", "8080"]
+    depends_on:
+      - mysql
+    networks:
+      - keycloak-and-mysql-network
+
+networks:
+  keycloak-and-mysql-network:
+
+volumes:
+  keycloak-and-mysql-volume:
